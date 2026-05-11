@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#d4af37">
+  <meta name="description" content="نظام نقاط البيع الذهبي — أيمن الشرنوبى لبرمجة ونسخ المفاتيح وبيع البطاريات">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="أيمن الشرنوبى">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="192x192" href="logo-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="logo-512.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <title>✨ أيمن الشرنوبى — نظام البيع الذهبي</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+
+<!-- Firebase SDK (Compat - Light) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+
+
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-logo" onclick="showSection('home')">
+    <div class="tb-logo-ic" style="background:none;overflow:hidden;border-radius:50%"><img src="icon.png" style="width:34px;height:34px;border-radius:50%;object-fit:cover;box-shadow:0 0 8px rgba(212,175,55,.5)" onerror="this.outerHTML='🛺'"></div>
+    <div class="tb-logo-tx" id="appNameDisplay">أيمن الشرنوبى</div>
+    <button id="installHeaderBtn" onclick="triggerInstall()" title="تثبيت التطبيق على جهازك" style="background:var(--green);border:none;color:#000;border-radius:14px;padding:5px 13px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:Cairo,sans-serif;margin-right:8px;display:inline-flex;align-items:center;gap:4px">📲 تثبيت</button>
+  </div>
+  <div class="tb-right">
+    <span class="offbadge" id="offBadge">📵</span>
+    <button class="tb-btn" onclick="changeFontSize(-1)">ا−</button>
+    <button class="tb-btn" onclick="changeFontSize(1)">ا＋</button>
+    <button class="tb-btn" onclick="hardRefresh()">🔄</button>
+    <div id="hTime">--:--</div>
+    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
+  </div>
+</div>
+
+<!-- INSTALL BANNER -->
+<div id="installBanner" style="display:none;position:fixed;top:60px;left:0;right:0;z-index:190;background:linear-gradient(135deg,#00c97a,#009f60);padding:10px 16px;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.3)">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:1.3rem">📲</span>
+    <div>
+      <div style="font-size:.8rem;font-weight:900;color:#000">ثبّت التطبيق على جهازك!</div>
+      <div style="font-size:.64rem;color:rgba(0,0,0,.7)">يعمل بدون إنترنت ويفتح أسرع</div>
+    </div>
+  </div>
+  <div class="u-flex-g7">
+    <button id="installBtn" style="background:#000;color:#00c97a;border:none;border-radius:8px;padding:7px 16px;font-family:Cairo,sans-serif;font-weight:700;font-size:.78rem;cursor:pointer">⭐ تثبيت</button>
+    <button onclick="document.getElementById('installBanner').style.display='none'" style="background:rgba(0,0,0,.3);color:#000;border:none;border-radius:20px;width:28px;height:28px;cursor:pointer;font-size:.9rem">✕</button>
+  </div>
+</div>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+
+
+<!-- Modal ربح الكل -->
+<div class="ov" id="mProfitDetails">
+  <div class="modal" style="border-radius:18px;margin:16px;max-width:380px">
+    <div class="mhd"><h3>✦ تقرير الأرباح التفصيلي</h3><button class="mcl" onclick="cm('mProfitDetails')">✕</button></div>
+    <div class="mbd" id="profitBox">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:var(--bdim);border:1px solid var(--bbdr);border-radius:var(--rs);padding:11px;text-align:center">
+          <div style="font-size:1.1rem;font-weight:900;color:var(--blue)" id="pb-bat">0 ج</div>
+          <div class="u-muted-md">🔋 بطاريات</div>
+        </div>
+        <div style="background:var(--gdim);border:1px solid var(--gbdr);border-radius:var(--rs);padding:11px;text-align:center">
+          <div style="font-size:1.1rem;font-weight:900;color:var(--green)" id="pb-tok">0 ج</div>
+          <div class="u-muted-md">🛺 توك توك</div>
+        </div>
+        <div style="background:var(--odim);border:1px solid var(--obdr);border-radius:var(--rs);padding:11px;text-align:center">
+          <div style="font-size:1.1rem;font-weight:900;color:var(--orange)" id="pb-key">0 ج</div>
+          <div class="u-muted-md">🔑 مفاتيح</div>
+        </div>
+        <div style="background:var(--gdim);border:2px solid var(--gbdr);border-radius:var(--rs);padding:11px;text-align:center">
+          <div class="u-green-lg" id="pb-total">0 ج</div>
+          <div class="u-muted-md">💰 الإجمالي</div>
+        </div>
+      </div>
+    </div>
+    <div class="mft"><button class="btn bg" onclick="cm('mProfitDetails')" style="width:100%">حسناً</button></div>
+  </div>
+</div>
+
+
+<!-- SPLASH SCREEN -->
+<div id="splashScreen">
+  <div class="splash-content">
+    <div class="splash-logo-wrap">
+      <img src="icon.png" class="splash-logo" alt="أيمن الشرنوبى">
+      <div class="splash-ring"></div>
+      <div class="splash-ring2"></div>
+      <div class="splash-ring3"></div>
+    </div>
+    <div class="splash-title">أيمن الشرنوبى</div>
+    <div class="splash-sub">لبرمجة ونسخ المفاتيح ✦ صيانة وبيع جميع البطاريات ✦ بيع قطع غيار التوكتوك</div>
+    <div class="splash-bar-wrap">
+      <div class="splash-bar-bg"><div class="splash-bar-fill"></div></div>
+      <div class="splash-pct" id="splashPct">جاري التحميل...</div>
+    </div>
+  </div>
+</div>
+
+<img src="icon.png" id="fixedLogo" style="position:fixed;top:10px;left:10px;width:40px;height:40px;border-radius:50%;z-index:180;border:2px solid #d4af37;object-fit:cover;box-shadow:0 0 10px rgba(212,175,55,.4);cursor:pointer" onclick="showSection('home')" onerror="this.style.display='none'">
+<div id="toast"></div>
+<div id="printArea"></div>
+
+<!-- ════════ APP LAYOUT ════════ -->
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <!-- Stats IDs محفوظة للـ JS — مخفية من الـ UI -->
+    <div style="display:none">
+      <span id="sb-all">0</span><span id="sb-tok">0</span>
+      <span id="sb-bat">0</span><span id="sb-key">0</span>
+      <span id="sb-low">0</span><span id="sb-out">0</span>
+    </div>
+    <!-- Nav -->
+    <nav class="sb-nav">
+      <button class="sb-btn active" id="sb-home" onclick="showSection('home')"><span class="sbi">🏠</span>الرئيسية</button>
+      <button class="sb-btn" id="sb-inventory" onclick="showSection('inventory')"><span class="sbi">📦</span>المخزون</button>
+      <button class="sb-btn" id="sb-sales" onclick="showSection('sales')"><span class="sbi">🛒</span>المبيعات</button>
+      <button class="sb-btn" id="sb-customers" onclick="showSection('customers')"><span class="sbi">👥</span>العملاء الكرام</button>
+      <button class="sb-btn" onclick="remindAllDebts()" style="background:linear-gradient(135deg,rgba(212,175,55,.15),rgba(212,175,55,.08));border-right:3px solid #d4af37;position:relative">
+        <span class="sbi">🔔</span>مديونية العملاء
+        <span id="debtReminderBadge" style="display:none;position:absolute;top:6px;left:8px;background:#ff3355;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.6rem;align-items:center;justify-content:center;font-weight:700">0</span>
+      </button>
+      <button class="sb-btn" id="sb-invoices" onclick="showSection('invoices')"><span class="sbi">🧾</span>الفواتير</button>
+      <!-- IDs محفوظة للـ JS — موجودة في Dashboard -->
+      <div style="display:none">
+        <span id="sb-profit-day">0</span><span id="sb-profit-month">0</span>
+        <span id="sb-debt-bat">0</span><span id="sb-debt-tok">0</span>
+      </div>
+      <div class="sb-divider"></div>
+      <button class="sb-btn" id="sb-keys" onclick="om('mKey')"><span class="sbi">🔑</span>خدمات المفاتيح</button>
+      <button class="sb-btn" id="sb-battery" onclick="om('mBattery')"><span class="sbi">🔋</span>شحن بطارية</button>
+      <div class="sb-divider"></div>
+      <button class="sb-btn" id="sb-shortages" onclick="showSection('shortages')"><span class="sbi">📋</span>النواقص</button>
+      <button class="sb-btn" id="sb-suppliers" onclick="showSection('suppliers')"><span class="sbi">🏭</span>الموردين</button>
+      <button class="sb-btn" id="sb-audit" onclick="showSection('audit')"><span class="sbi">📜</span>سجل التعديلات</button>
+      <button class="sb-btn" id="sb-backup" onclick="showSection('backup')"><span class="sbi">💾</span>النسخ الاحتياطي</button>
+      <button class="sb-btn" id="sb-settings" onclick="showSection('settings')"><span class="sbi">⚙️</span>الإعدادات</button>
+    </nav>
+    <div class="sb-footer">
+      <div style="font-size:.62rem;color:var(--gold);text-align:center;opacity:.75">✦ أيمن الشرنوبى ✦<br><span style="color:var(--muted);font-size:.56rem">نظام نقاط البيع الذهبي v4.0</span></div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+
+    <!-- DASHBOARD BAR (sticky) -->
+    <div class="dash-bar" id="dashBar">
+      <span class="db-date" id="dbDate">—</span>
+      <div class="db-stat sc-g">
+        <span class="di">💰</span>
+        <div><div class="dv" id="db-sales">0 ج</div><div class="dl">إجمالي اليوم</div></div>
+      </div>
+      <div class="db-stat sc-b">
+        <span class="di">🔋</span>
+        <div><div class="dv" id="db-bat">0 ج</div><div class="dl">البطاريات</div></div>
+      </div>
+      <div class="db-stat" style="background:var(--odim);border-color:var(--obdr)">
+        <span class="di">🔑</span>
+        <div><div class="dv" id="db-key" style="color:var(--orange)">0 ج</div><div class="dl">المفاتيح</div></div>
+      </div>
+      <div class="db-stat" style="background:var(--gdim);border-color:var(--gbdr)">
+        <span class="di">📈</span>
+        <div><div class="dv" id="db-profit-day" style="color:var(--green)">0 ج</div><div class="dl">ربح اليوم</div></div>
+      </div>
+      <div class="db-stat" style="background:var(--bdim);border-color:var(--bbdr)">
+        <span class="di">📊</span>
+        <div><div class="dv" id="db-profit-month" style="color:var(--blue)">0 ج</div><div class="dl">ربح الشهر</div></div>
+      </div>
+      <div class="db-stat u-row-danger">
+        <span class="di">💳</span>
+        <div><div class="dv" id="db-debt-bat" style="color:var(--red)">0 ج</div><div class="dl">دين بطاريات</div></div>
+      </div>
+      <div class="db-stat u-row-danger">
+        <span class="di">🛺</span>
+        <div><div class="dv" id="db-debt-tok" style="color:var(--red)">0 ج</div><div class="dl">دين توك توك</div></div>
+      </div>
+      <div class="profit-bar">
+        <label>ربح الكل:</label>
+        <button class="pbtn m" onclick="changeGP(-5)">−</button>
+        <input id="gpVal" type="number" value="0" min="-50" max="200" oninput="document.getElementById('gpLabel').textContent=(+this.value>=0?'+':'')+this.value+'%'">
+        <span id="gpLabel" style="font-size:.68rem;color:var(--muted);white-space:nowrap">+0%</span>
+        <button class="pbtn p" onclick="changeGP(5)">＋</button>
+        <button class="btn bg bxs" onclick="applyGlobalProfit()" style="padding:5px 9px">✅</button>
+        <button class="btn bgh bxs" onclick="showProfitDetails()" style="padding:5px 9px" title="تفاصيل الربح">📊</button>
+      </div>
+    </div>
+
+    <!-- QUICK STRIP — الديون الكلية فقط (ثابت) -->
+    <div id="quickStrip" style="position:sticky;top:0;z-index:88;background:rgba(11,11,0,.97);backdrop-filter:blur(14px);border-bottom:1px solid var(--goldbdr);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <!-- IDs محفوظة للـ JS (مخفية) -->
+      <span id="gpBat" style="display:none">0</span>
+      <span id="gpBatLbl" style="display:none"></span>
+      <span id="gpTok" style="display:none">0</span>
+      <span id="gpTokLbl" style="display:none"></span>
+      <span id="gpKey" style="display:none">0</span>
+      <span id="gpKeyLbl" style="display:none"></span>
+      <span id="qs-debt-bat" style="display:none">0</span>
+      <span id="qs-debt-tok" style="display:none">0</span>
+      <!-- IDs مخفية للـ JS فقط -->
+      <span id="qs-debt-bat-show" style="display:none">0</span>
+      <span id="qs-debt-tok-show" style="display:none">0</span>
+    </div>
+
+        <!-- CONTENT AREA -->
+    <div class="content-area">
+
+      <!-- ══════ HOME ══════ -->
+      <div class="section active" id="sec-home">
+        <div class="stat-grid">
+          <div class="stat-card sc-g" onclick="showSection('inventory')"><span class="sv" id="hs-prods">0</span><span class="sl">✦ المنتجات والبضائع</span></div>
+          <div class="stat-card sc-o" onclick="showSection('sales')"><span class="sv" id="hs-sales">0 ج</span><span class="sl">💰 مبيعات اليوم</span></div>
+          <div class="stat-card sc-r" onclick="showSection('customers')"><span class="sv" id="hs-debt">0 ج</span><span class="sl">💳 الديون</span></div>
+          <div class="stat-card sc-b"><span class="sv" id="hs-renew">0</span><span class="sl">⚠️ تحتاج تجديد</span></div>
+        </div>
+        <div id="homeAlerts"></div>
+        <div class="qa-grid">
+          <div class="qa-card qa-o" onclick="showSection('sales')"><div class="qai">🛒</div><h4>تسجيل بيع</h4><p>✦ فاتورة مبيعات جديدة</p></div>
+          <div class="qa-card qa-g" onclick="openAddProd()"><div class="qai">➕</div><h4>إضافة منتج</h4><p>تحديث المخزون</p></div>
+          <div class="qa-card qa-b" onclick="om('mKey')"><div class="qai">🔑</div><h4>خدمات المفاتيح</h4><p>نسخ وتصليح</p></div>
+          <div class="qa-card qa-r" onclick="om('mBattery')"><div class="qai">🔋</div><h4>شحن بطارية</h4><p>تسجيل شحن</p></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>✦ آخر العمليات والمعاملات</h3></div>
+          <div id="recentOps" class="card-body"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>✦ تقرير اليوم التفصيلي</h3></div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+              <div style="background:var(--s2);border-radius:var(--rs);padding:9px;text-align:center">
+                <b id="rep-all" style="color:var(--green);display:block;font-size:.95rem">0 ج</b>
+                <span class="u-muted-sm">إجمالي</span>
+              </div>
+              <div style="background:var(--s2);border-radius:var(--rs);padding:9px;text-align:center">
+                <b id="rep-bat" style="color:var(--blue);display:block;font-size:.95rem">0 ج</b>
+                <span class="u-muted-sm">🔋 بطاريات</span>
+              </div>
+              <div style="background:var(--s2);border-radius:var(--rs);padding:9px;text-align:center">
+                <b id="rep-key" style="color:var(--orange);display:block;font-size:.95rem">0 ج</b>
+                <span class="u-muted-sm">🔑 مفاتيح</span>
+              </div>
+            </div>
+            <div style="font-size:.74rem;font-weight:700;color:var(--blue);margin-bottom:5px">🔋 مبيعات البطاريات</div>
+            <div id="rep-bat-list"></div>
+            <div style="font-size:.74rem;font-weight:700;color:var(--orange);margin:8px 0 5px">🔑 مبيعات المفاتيح</div>
+            <div id="rep-key-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ INVENTORY ══════ -->
+      <div class="section" id="sec-inventory">
+        <div class="catgrid">
+          <div class="catbtn on" id="cat-all" onclick="setCat('all')"><div class="ci">📦</div><div class="cn">جميع المنتجات</div><div class="cc" id="cnt-all">0</div></div>
+          <div class="catbtn" id="cat-toktok" onclick="setCat('toktok')"><div class="ci">🛺</div><div class="cn">توك توك</div><div class="cc" id="cnt-toktok">0</div></div>
+          <div class="catbtn" id="cat-battery" onclick="setCat('battery')"><div class="ci">🔋</div><div class="cn">بطاريات</div><div class="cc" id="cnt-battery">0</div></div>
+          <div class="catbtn" id="cat-key" onclick="setCat('key');om('mKey')"><div class="ci">🔑</div><div class="cn">مفاتيح</div><div class="cc" id="cnt-key">0</div></div>
+          <div class="catbtn" id="cat-low" onclick="setCat('low')"><div class="ci">⚠️</div><div class="cn">منخفض</div><div class="cc" id="cnt-low" style="color:var(--orange)">0</div></div>
+          <div class="catbtn" id="cat-out" onclick="setCat('out')"><div class="ci">❌</div><div class="cn">نفذ</div><div class="cc" id="cnt-out" style="color:var(--red)">0</div></div>
+        </div>
+        <div id="keyMsg" style="display:none;text-align:center;padding:20px;background:var(--s1);border-radius:var(--r);border:1px solid var(--brd);margin-bottom:10px">
+          <div style="font-size:2rem;margin-bottom:8px">🔑</div>
+          <p style="font-weight:700;margin-bottom:10px">قسم نسخ المفاتيح</p>
+          <button class="btn bb" onclick="om('mKey')">🔑 فتح خدمات المفاتيح</button>
+        </div>
+        <div id="invContent">
+          <div class="card">
+            <div class="card-head"><h3>🔍 بحث</h3></div>
+            <div class="card-body">
+              <div class="fg2">
+                <div class="fg" style="margin-bottom:0"><label>الاسم أو الكود</label>
+                  <input id="invQ" placeholder="ابحث..." oninput="renderInv()"></div>
+                <div class="fg" style="margin-bottom:0"><label>الرف</label>
+                  <select id="invShelf" onchange="renderInv()"><option value="">كل الأرفف</option></select></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h3 id="invTitle">✦ جميع المنتجات والبضائع</h3>
+              <div class="u-flex-g6">
+                <button class="btn bgh bsm" onclick="openAddProd()">＋ منتج</button>
+                </div>
+            </div>
+            <div class="twrap"><table>
+              <thead><tr><th>المنتج</th><th>القسم</th><th>الرف</th><th>الكمية</th><th>سعر الشراء</th><th>سعر البيع</th><th>الحالة</th><th></th></tr></thead>
+              <tbody id="invTbl"></tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ SALES ══════ -->
+      <div class="section" id="sec-sales">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div class="card">
+              <div class="card-head"><h3>👤 العميل</h3></div>
+              <div class="card-body">
+                <div class="fg" style="position:relative">
+                  <label>اسم العميل <span style="color:var(--muted)">(اختياري في النقدي)</span></label>
+                  <input id="sCust" placeholder="اكتب..." oninput="suggestCust()" autocomplete="off">
+                  <div id="custSug" style="display:none;position:absolute;top:100%;right:0;left:0;background:var(--s3);border:1px solid var(--brd2);border-radius:var(--rs);z-index:100;max-height:150px;overflow-y:auto"></div>
+                </div>
+                <div class="fg" style="margin-bottom:10px"><label>الموبايل</label>
+                  <input id="sPhn" type="tel" placeholder="01..."></div>
+                <div class="u-flex-g6">
+                  <button class="btn bg" id="payBtn" onclick="setPay('cash')" style="flex:1">💵 نقدي</button>
+                  <button class="btn bgh" id="creditBtn" onclick="setPay('credit')" style="flex:1">📋 آجل</button>
+                  <button class="btn bgh" id="partialBtn" onclick="setPay('partial')" style="flex:1">💳 جزئي</button>
+                </div>
+                <div id="partialDiv" style="display:none;margin-top:8px;background:var(--bdim);border:1px solid var(--bbdr);border-radius:var(--rs);padding:9px">
+                  <label style="font-size:.7rem;font-weight:700;color:var(--blue)">المبلغ المدفوع الآن:</label>
+                  <input id="partialAmt" type="number" placeholder="0" min="0" style="background:var(--s2);border:1px solid var(--brd2);border-radius:var(--rs);padding:8px 12px;color:var(--text);font-family:Cairo,sans-serif;font-size:.88rem;width:100%;margin-top:4px" oninput="updatePartialInfo()">
+                  <div id="partialInfo" style="font-size:.72rem;margin-top:5px"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>🔍 إضافة صنف</h3></div>
+              <div class="card-body">
+                <div class="fg2">
+                  <div class="fg" style="margin-bottom:0"><label>الاسم أو الرف</label>
+                    <input id="sQ" placeholder="ابحث..." oninput="searchProds()"></div>
+                  <div class="fg" style="margin-bottom:0"><label>الرف</label>
+                    <select id="sShelf" onchange="searchProds()"><option value="">كل الأرفف</option></select></div>
+                </div>
+                <div id="sResults" style="margin-top:8px;max-height:200px;overflow-y:auto"></div>
+                <div id="selBar" style="display:none;background:var(--gdim);border:1px solid var(--gbdr);border-radius:var(--rs);padding:9px;margin-top:7px">
+                  <div style="font-size:.78rem;font-weight:700;margin-bottom:6px" id="selName"></div>
+                  <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                    <label class="u-muted-7">الكمية:</label>
+                    <input id="selQty" type="number" value="1" min="1" style="width:62px;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:6px 8px;color:var(--text);font-family:Cairo,sans-serif">
+                    <label class="u-muted-7">السعر:</label>
+                    <input id="selPrice" type="number" style="width:82px;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:6px 8px;color:var(--text);font-family:Cairo,sans-serif">
+                    <button class="btn bg bsm" onclick="addToCart()">➕</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-head"><h3>🧾 الفاتورة</h3><span class="bg-b" id="cartCount">0 صنف</span></div>
+              <div id="cartItems" style="padding:10px 14px;min-height:100px"><div class="empty"><div class="empty-ic">🛒</div><p>لم تضف أصناف بعد</p></div></div>
+              <div id="cartFoot" style="display:none;padding:12px 14px;border-top:1px solid var(--brd)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <span style="font-weight:700">الإجمالي:</span>
+                  <span id="cartTotal" class="u-green-lg">0 ج</span>
+                </div>
+                <div class="u-flex-g7">
+                  <button class="btn bgh" style="flex:1" onclick="clearCart()">🗑️ مسح</button>
+                  <button class="btn bo" style="flex:2" onclick="doSale()">✅ إتمام البيع</button>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+              <h3>✦ مبيعات اليوم</h3>
+              <div style="display:flex;align-items:center;gap:7px">
+                <input id="todQ" placeholder="🔍 بحث..." oninput="filterTodaySales()"
+                  style="width:120px;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:5px 9px;font-size:.73rem;color:var(--text);font-family:Cairo,sans-serif">
+                <span class="bg-b" id="todBdg">0</span>
+              </div>
+            </div>
+              <div class="twrap"><table>
+                <thead><tr><th>الوقت</th><th>العميل</th><th>الأصناف</th><th>الإجمالي</th><th>الدفع</th><th></th></tr></thead>
+                <tbody id="todTbl"></tbody>
+              </table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ CUSTOMERS ══════ -->
+      <div class="section" id="sec-customers">
+        <div class="card">
+          <div class="card-head">
+            <h3>✦ سجل العملاء الكرام</h3>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <input id="custLiveQ" placeholder="🔍 بحث الاسم أو الموبايل..."
+                oninput="filterCustomers()"
+                style="width:170px;background:#0f172a;border:1px solid #334155;border-radius:6px;
+                padding:6px 10px;font-size:.75rem;color:var(--text);font-family:Cairo,sans-serif">
+              <button class="btn bgh bsm" id="archBtn" onclick="toggleArchive()">📁 المسددون</button>
+              <button class="btn bg bsm" onclick="openAddCust()">＋ عميل</button>
+            </div>
+          </div>
+          <div class="twrap"><table>
+            <thead><tr><th>#</th><th>الاسم 👆</th><th>الموبايل</th><th>الدين</th><th>الحالة</th><th>آخر تعديل</th><th></th></tr></thead>
+            <tbody id="custTbl"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- ══════ INVOICES ══════ -->
+      <div class="section" id="sec-invoices">
+        <div class="card">
+          <div class="card-head">
+            <h3>✦ سجل الفواتير</h3>
+            <input id="invFQ" placeholder="بحث..." oninput="renderInvoices()" style="width:130px;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:6px 10px;font-size:.74rem;color:var(--text);font-family:Cairo,sans-serif">
+          </div>
+          <div id="invList" style="padding:12px 14px"></div>
+        </div>
+      </div>
+
+      <!-- ══════ SUPPLIERS ══════ -->
+      <div class="section" id="sec-suppliers">
+        <div class="card">
+          <div class="card-head">
+            <h3>✦ الموردون الموثوقون</h3>
+            <div class="u-flex-g6">
+              <input id="supQ" placeholder="🔍 بحث..." oninput="renderSuppliers()" style="width:130px;background:var(--s2);border:1px solid var(--brd2);border-radius:6px;padding:6px 10px;font-size:.74rem;color:var(--text);font-family:Cairo,sans-serif">
+              <button class="btn bg bsm" onclick="openAddSupplier()">＋ مورد</button>
+            </div>
+          </div>
+          <div class="twrap"><table>
+            <thead><tr><th>الاسم 👆</th><th>الهاتف</th><th>النشاط</th><th>الرصيد</th><th>الحالة</th><th>آخر تعديل</th><th></th></tr></thead>
+            <tbody id="suppliersTbl"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- ══════ SETTINGS ══════ -->
+      <div class="section" id="sec-settings">
+        <div class="card">
+          <div class="card-head"><h3>✦ الإعدادات والتخصيص</h3></div>
+          <div class="card-body">
+            <!-- Shop Identity -->
+            <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--goldbdr)">
+              <div class="u-gold-head">✦ هوية المحل</div>
+              <div class="fg2">
+                <div class="fg"><label>🏪 اسم المحل</label>
+                  <input id="settShopName" placeholder="أيمن الشرنوبى" oninput="updateShopName(this.value)"></div>
+                <div class="fg"><label>📍 العنوان</label>
+                  <input id="settAddress" placeholder="البحيرة — مصر"></div>
+              </div>
+            </div>
+            <div class="fg2">
+              <div class="fg"><label>📲 رقم واتساب المحل</label>
+                <input id="settWA" type="tel" placeholder="201024306764"></div>
+              <div class="fg"><label>💰 نسبة الربح العامة %</label>
+                <input id="settGP" type="number" value="0"></div>
+            </div>
+            <div class="fg"><label>🔐 كلمة مرور المدير الجديدة</label>
+              <input id="settNewPwd" type="password" placeholder="اتركه فارغاً إذا لا تريد تغييره"></div>
+            <!-- Barcode -->
+            <div style="margin:10px 0;padding:10px;border:1px solid var(--goldbdr);border-radius:8px;background:var(--s2)">
+              <div style="font-size:.72rem;color:var(--gold);font-weight:700;margin-bottom:6px">📷 نظام الباركود</div>
+              <div style="font-size:.68rem;color:var(--muted);margin-bottom:8px">اضغط على حقل البحث في المنتجات وامسح الباركود بالسكانر</div>
+              <div class="u-flex-g8">
+                <button class="btn bgh bsm" style="flex:1" onclick="activateBarcodeInput()">🔌 تفعيل الإدخال</button>
+                <button class="btn bb bsm" style="flex:1" id="barcodeStatusBtn">⚪ متوقف</button>
+              </div>
+            </div>
+            <button class="btn bg" style="width:100%;margin-top:4px" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>✦ النسخ الاحتياطي والاسترداد</h3></div>
+          <div class="card-body">
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <button class="btn bg bsm" style="flex:1" onclick="exportBackup()">📤 تصدير JSON</button>
+              <button class="btn" style="flex:1;background:linear-gradient(135deg,#4285f4,#34a853);color:#fff" onclick="fbBackupAll()">☁️ رفع Firebase</button>
+            </div>
+            <div class="u-flex-g8">
+              <button class="btn bgh bsm" style="flex:1" onclick="document.getElementById('importFile').click()">📥 استيراد</button>
+              <button class="btn br bsm" style="flex:1" onclick="resetAllData()">🧹 إعادة ضبط</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn bo bsm" style="flex:1" onclick="cleanDuplicates()">🔧 تنظيف المكررات</button>
+              <button class="btn bb bsm" style="flex:1" onclick="downloadBackup()">💾 تحميل نسخة</button>
+            </div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--goldbdr)">
+              <div class="u-gold-head">🔄 استعادة النسخ التلقائية (آخر 7 نسخ)</div>
+              <div id="backupRotationList" style="display:flex;flex-direction:column;gap:5px"></div>
+              <button class="btn bgh bsm" style="width:100%;margin-top:6px" onclick="renderRotationBackups()">🔍 عرض النسخ المتاحة</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ SHORTAGES ══════ -->
+      <div class="section" id="sec-shortages">
+        <div class="card">
+          <div class="card-head">
+            <h3 style="color:var(--gold)">✦ قائمة النواقص</h3>
+            <div class="u-flex-g6">
+              <button class="btn bg bsm" onclick="addShortageRow()">＋ إضافة صنف</button>
+              <button class="btn bsm" style="background:#25D366;color:#fff;border:none" onclick="sendShortagesWAWithLogo()">📲 واتساب</button>
+            </div>
+          </div>
+          <div class="twrap">
+            <table style="min-width:300px">
+              <thead><tr><th>الصنف</th><th>الكمية</th><th></th></tr></thead>
+              <tbody id="shortagesTbl2"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ AUDIT LOG ══════ -->
+      <div class="section" id="sec-audit">
+        <div class="card">
+          <div class="card-head"><h3>📜 سجل التعديلات</h3>
+            <button class="btn bgh bsm" onclick="clearAuditLog()">🗑️ مسح السجل</button>
+          </div>
+          <div id="auditList" class="card-body"></div>
+        </div>
+      </div>
+
+      <!-- ══════ BACKUP ══════ -->
+      <div class="section" id="sec-backup">
+        <div class="card">
+          <div class="card-head"><h3>💾 النسخ الاحتياطي</h3></div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <button class="btn bg" style="padding:16px;flex-direction:column;gap:6px" onclick="exportBackup()">
+                <span style="font-size:1.8rem">📤</span><span>تصدير JSON</span><small class="u-muted-66">Backup محلي</small>
+              </button>
+              <button class="btn bgh" style="padding:16px;flex-direction:column;gap:6px" onclick="document.getElementById('importFile').click()">
+                <span style="font-size:1.8rem">📥</span><span>استيراد JSON</span><small class="u-muted-66">Restore</small>
+              </button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <button class="btn" style="padding:16px;flex-direction:column;gap:6px;background:linear-gradient(135deg,#4285f4,#34a853);color:#fff" onclick="fbBackupAll()">
+                <span style="font-size:1.8rem">☁️</span><span>رفع لـ Firebase</span><small style="font-size:.64rem;opacity:.85">Backup سحابي</small>
+              </button>
+              <button class="btn bgh" style="padding:16px;flex-direction:column;gap:6px" onclick="fbPullAll().then(()=>toast('✅ تم المزامنة'))">
+                <span style="font-size:1.8rem">🔄</span><span>مزامنة من Firebase</span><small class="u-muted-66">Pull البيانات</small>
+              </button>
+            </div>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>📜 آخر سجلات Audit</h3></div>
+          <div id="auditPreview" style="padding:10px 14px;max-height:300px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+    </div><!-- end content-area -->
+  </div><!-- end main-content -->
+</div><!-- end app-layout -->
+
+<!-- ════════════════════ ALL MODALS ════════════════════ -->
+
+<!-- إضافة منتج -->
+<div class="ov" id="mAddP">
+  <div class="modal">
+    <div class="mhd"><h3>➕ منتج جديد</h3><button class="mcl" onclick="cm('mAddP')">✕</button></div>
+    <div class="mbd">
+      <div class="fg"><label>اسم المنتج *</label><input id="pNm" oninput="autoDetectCat();autoSell()"></div>
+      <div class="fg">
+        <label>صورة المنتج (اختياري)</label>
+        <div class="u-flex-g8c">
+          <div id="pImgPrev" style="width:54px;height:54px;border-radius:8px;background:var(--s2);border:1px solid var(--brd2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden;flex-shrink:0">📦</div>
+          <div style="flex:1">
+            <input type="file" id="pImgFile" accept="image/*" style="display:none" onchange="previewImg('pImgFile','pImgPrev','pImg')">
+            <button class="btn bgh bsm u-w100-mb4" onclick="document.getElementById('pImgFile').click()">📷 رفع</button>
+            <button class="btn bgh bsm u-w100-sm" onclick="clearImg('pImgPrev','pImg')">🗑️ مسح</button>
+          </div>
+        </div>
+        <input type="hidden" id="pImg">
+      </div>
+      <div class="fg"><label>القسم</label>
+        <select id="pCat"><option value="toktok">🛺 توك توك</option><option value="battery">🔋 بطاريات</option><option value="key">🔑 مفاتيح</option><option value="other">📦 أخرى</option></select></div>
+      <div class="fg2">
+        <div class="fg"><label>كود</label><input id="pCd" placeholder="اختياري"></div>
+        <div class="fg"><label>الرف</label><input id="pSh" placeholder="9 شمال"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label>الكمية المضافة</label><input id="pQt" type="number" value="0" min="0"></div>
+        <div class="fg"><label>حد التنبيه</label><input id="pMn" type="number" value="3" min="0"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label>سعر الشراء</label><input id="pBu" type="number" placeholder="0" oninput="autoSell()"></div>
+        <div class="fg"><label>ربح المنتج %</label><input id="pPr" type="number" value="20" oninput="autoSell()"></div>
+      </div>
+      <div class="fg"><label>سعر البيع (تلقائي)</label><input id="pSl" type="number" placeholder="0" class="u-green-bold"></div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mAddP')">إلغاء</button><button class="btn bg" onclick="saveProd()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- تعديل منتج -->
+<div class="ov" id="mEdP">
+  <div class="modal">
+    <div class="mhd"><h3>✏️ تعديل المنتج</h3><button class="mcl" onclick="cm('mEdP')">✕</button></div>
+    <div class="mbd">
+      <input type="hidden" id="ePId">
+      <div class="fg"><label>اسم المنتج</label><input id="eNm"></div>
+      <div class="fg">
+        <label>صورة المنتج</label>
+        <div class="u-flex-g8c">
+          <div id="eImgPrev" style="width:54px;height:54px;border-radius:8px;background:var(--s2);border:1px solid var(--brd2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden;flex-shrink:0">📦</div>
+          <div style="flex:1">
+            <input type="file" id="eImgFile" accept="image/*" style="display:none" onchange="previewImg('eImgFile','eImgPrev','eImg')">
+            <button class="btn bgh bsm u-w100-mb4" onclick="document.getElementById('eImgFile').click()">📷 تغيير</button>
+            <button class="btn bgh bsm u-w100-sm" onclick="clearImg('eImgPrev','eImg')">🗑️ مسح</button>
+          </div>
+        </div>
+        <input type="hidden" id="eImg">
+      </div>
+      <div class="fg"><label>القسم</label>
+        <select id="eCat"><option value="toktok">🛺 توك توك</option><option value="battery">🔋 بطاريات</option><option value="key">🔑 مفاتيح</option><option value="other">📦 أخرى</option></select></div>
+      <div class="fg2">
+        <div class="fg"><label>الكود</label><input id="eCd"></div>
+        <div class="fg"><label>الرف</label><input id="eSh"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label>الكمية</label><input id="eQt" type="number" min="0"></div>
+        <div class="fg"><label>حد التنبيه</label><input id="eMn" type="number" min="0"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label>سعر الشراء</label><input id="eBu" type="number" oninput="autoEditSell()"></div>
+        <div class="fg"><label>ربح المنتج %</label><input id="ePr" type="number" oninput="autoEditSell()"></div>
+      </div>
+      <div class="fg"><label>سعر البيع النهائي</label><input id="eSl" type="number" class="u-green-bold"></div>
+      <div id="editLastUpdate" class="u-muted-68"></div>
+    </div>
+    <div class="mft">
+      <button class="btn bo bsm" onclick="archiveProd(+document.getElementById('ePId').value)">🗄️ أرشفة</button>
+      <button class="btn bgh" onclick="cm('mEdP')">إلغاء</button>
+      <button class="btn bg" onclick="updProd()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- عميل جديد -->
+<div class="ov" id="mAddC">
+  <div class="modal">
+    <div class="mhd"><h3>➕ عميل جديد</h3><button class="mcl" onclick="cm('mAddC')">✕</button></div>
+    <div class="mbd">
+      <div class="fg2">
+        <div class="fg"><label>الاسم *</label><input id="cNm"></div>
+        <div class="fg"><label>الموبايل</label><input id="cPh" type="tel" placeholder="01..."></div>
+      </div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mAddC')">إلغاء</button><button class="btn bg" onclick="saveCust()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- تعديل عميل -->
+<div class="ov" id="mEditCust">
+  <div class="modal">
+    <div class="mhd"><h3>✏️ تعديل العميل</h3><button class="mcl" onclick="cm('mEditCust')">✕</button></div>
+    <div class="mbd">
+      <input type="hidden" id="ecId">
+      <div class="fg2">
+        <div class="fg"><label>الاسم</label><input id="ecNm"></div>
+        <div class="fg"><label>الموبايل</label><input id="ecPh" type="tel"></div>
+      </div>
+      <div class="fg"><label>الدين الحالي</label><input id="ecDebt" type="number" min="0" class="u-red-bold"></div>
+      <div class="fg"><label>ملاحظات</label><input id="ecNote" placeholder="مثال: يسدد كل شهر"></div>
+      <div id="custLastUpdate" class="u-muted-68"></div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mEditCust')">إلغاء</button><button class="btn bg" onclick="saveEditCust()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- سداد دين -->
+<div class="ov" id="mPay">
+  <div class="modal">
+    <div class="mhd"><h3>💳 تسجيل سداد</h3><button class="mcl" onclick="cm('mPay')">✕</button></div>
+    <div class="mbd">
+      <input type="hidden" id="payId">
+      <div id="payDebtInfo" style="background:var(--rdim);border:1px solid var(--rbdr);border-radius:var(--rs);padding:9px;margin-bottom:10px;font-size:.8rem"></div>
+      <div class="fg"><label>المبلغ المدفوع</label><input id="payAmt" type="number" min="0"></div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mPay')">إلغاء</button><button class="btn bg" onclick="doPay()">✅ تسجيل</button></div>
+  </div>
+</div>
+
+<!-- معاملات العميل -->
+<div class="ov" id="mCustTx">
+  <div class="modal">
+    <div class="mhd">
+      <div><h3 id="txName">معاملات</h3><div id="txSumm" style="font-size:.68rem;color:var(--muted);margin-top:2px"></div></div>
+      <button class="mcl" onclick="cm('mCustTx')">✕</button>
+    </div>
+    <div class="mbd">
+      <div id="txList"></div>
+      <div style="display:flex;gap:7px;margin-top:10px">
+        <button class="btn bg" style="flex:1" onclick="payFromTx()">💳 سداد</button>
+        <button class="btn bgh" style="flex:1" onclick="editFromTx()">✏️ تعديل</button>
+        <button class="btn" style="flex:1;background:#25D366;color:#fff" onclick="sendDebtWA()">📲 واتساب</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- طباعة فاتورة -->
+<div class="ov" id="mPrint">
+  <div class="modal">
+    <div class="mhd"><h3>🖨️ فاتورة البيع</h3><button class="mcl" onclick="cm('mPrint')">✕</button></div>
+    <div id="printBody" class="mbd"></div>
+    <div class="mft">
+      <button class="btn bgh" onclick="cm('mPrint')">إغلاق</button>
+      <button class="btn" style="background:#25D366;color:#fff" onclick="sendInvWA()">📲 واتساب</button>
+      <button class="btn bp" onclick="sendInvAsImage()">📷 صورة</button>
+      <button class="btn bg" onclick="window.print()">🖨️ طباعة</button>
+    </div>
+  </div>
+</div>
+
+<!-- خدمات المفاتيح -->
+<div class="ov" id="mKey">
+  <div class="modal">
+    <div class="mhd"><h3>🔑 خدمات المفاتيح</h3><button class="mcl" onclick="cm('mKey')">✕</button></div>
+    <div class="mbd">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <button class="btn" style="background:var(--bdim);color:var(--blue);border:1px solid var(--bbdr);padding:16px;flex-direction:column;gap:6px" onclick="showKeySale()">🔑<br><small>نسخ مفتاح</small></button>
+        <button class="btn" style="background:var(--odim);color:var(--orange);border:1px solid var(--obdr);padding:16px;flex-direction:column;gap:6px" onclick="showKeyRepair()">🔧<br><small>تصليح كالون</small></button>
+        <button class="btn bgh" style="padding:14px;flex-direction:column;gap:5px" onclick="cm('mKey');showSection('sales')">🛒<br><small>بيع منتج</small></button>
+        <button class="btn bgh" style="padding:14px;flex-direction:column;gap:5px;background:var(--gdim);color:var(--green);border:1px solid var(--gbdr)" onclick="cm('mKey');om('mBattery')">🔋<br><small>شحن بطارية</small></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- نسخ مفتاح -->
+<div class="ov" id="mKeySale">
+  <div class="modal">
+    <div class="mhd"><h3>🔑 بيع نسخ مفتاح</h3><button class="mcl" onclick="cm('mKeySale')">✕</button></div>
+    <div class="mbd">
+      <div class="fg"><label>اسم العميل</label><input id="ksCust" placeholder="اختياري"></div>
+      <div class="fg"><label>نوع المفتاح</label>
+        <select id="ksType"><option>مفتاح عادي</option><option>مفتاح كالون</option><option>مفتاح مشفر</option><option>ريموت سيارة</option><option>مفتاح موتوسيكل</option></select></div>
+      <div class="fg"><label>السعر</label>
+        <div class="price-tag">
+          <span class="pt" onclick="document.getElementById('ksPrice').value=20">20 ج</span>
+          <span class="pt" onclick="document.getElementById('ksPrice').value=25">25 ج</span>
+          <span class="pt" onclick="document.getElementById('ksPrice').value=30">30 ج</span>
+          <span class="pt" onclick="document.getElementById('ksPrice').value=35">35 ج</span>
+          <span class="pt" onclick="document.getElementById('ksPrice').value=60">60 ج</span>
+          <span class="pt" onclick="document.getElementById('ksPrice').value=100">100 ج</span>
+          <span class="pt" onclick="document.getElementById('ksPrice').value=120">120 ج</span>
+        </div>
+        <input id="ksPrice" type="number" placeholder="أو اكتب" style="margin-top:6px"></div>
+      <div class="u-flex-g6">
+        <button class="btn bg" id="kPayBtn" style="flex:1" onclick="setKPay('cash')">💵 نقدي</button>
+        <button class="btn bgh" id="kCreditBtn" style="flex:1" onclick="setKPay('credit')">📋 آجل</button>
+      </div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mKeySale')">إلغاء</button><button class="btn bg" onclick="doKeySale()">✅ تسجيل</button></div>
+  </div>
+</div>
+
+<!-- تصليح كالون -->
+<div class="ov" id="mKeyRepair">
+  <div class="modal">
+    <div class="mhd"><h3>🔧 تصليح كالون</h3><button class="mcl" onclick="cm('mKeyRepair')">✕</button></div>
+    <div class="mbd">
+      <div class="fg"><label>اسم العميل</label><input id="krCust" placeholder="اختياري"></div>
+      <div class="fg"><label>وصف العمل</label><input id="krDesc" placeholder="تصليح كالون باب أمامي"></div>
+      <div class="fg"><label>السعر</label>
+        <div class="price-tag">
+          <span class="pt" onclick="document.getElementById('krPrice').value=20">20</span>
+          <span class="pt" onclick="document.getElementById('krPrice').value=30">30</span>
+          <span class="pt" onclick="document.getElementById('krPrice').value=50">50</span>
+          <span class="pt" onclick="document.getElementById('krPrice').value=100">100</span>
+          <span class="pt" onclick="document.getElementById('krPrice').value=150">150</span>
+          <span class="pt" onclick="document.getElementById('krPrice').value=200">200</span>
+        </div>
+        <input id="krPrice" type="number" placeholder="أو اكتب" style="margin-top:6px"></div>
+      <div class="u-flex-g6">
+        <button class="btn bg" id="krPayBtn" style="flex:1" onclick="setKrPay('cash')">💵 نقدي</button>
+        <button class="btn bgh" id="krCreditBtn" style="flex:1" onclick="setKrPay('credit')">📋 آجل</button>
+      </div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mKeyRepair')">إلغاء</button><button class="btn bg" onclick="doKeyRepair()">✅ تسجيل</button></div>
+  </div>
+</div>
+
+<!-- شحن بطارية -->
+<div class="ov" id="mBattery">
+  <div class="modal">
+    <div class="mhd"><h3>🔋 شحن بطارية</h3><button class="mcl" onclick="cm('mBattery')">✕</button></div>
+    <div class="mbd">
+      <div class="fg"><label>اسم العميل</label><input id="batCust" placeholder="اختياري"></div>
+      <div class="fg"><label>نوع البطارية</label>
+        <select id="batType"><option>بطارية موتوسيكل</option><option>بطارية توك توك</option><option>بطارية سيارة</option><option>شحن بطارية</option></select></div>
+      <div class="fg"><label>السعر</label>
+        <div class="price-tag">
+          <span class="pt" onclick="document.getElementById('batPrice').value=20">20 ج</span>
+          <span class="pt" onclick="document.getElementById('batPrice').value=30">30 ج</span>
+          <span class="pt" onclick="document.getElementById('batPrice').value=50">50 ج</span>
+          <span class="pt" onclick="document.getElementById('batPrice').value=100">100 ج</span>
+        </div>
+        <input id="batPrice" type="number" placeholder="أو اكتب" style="margin-top:6px"></div>
+      <div class="fg"><label>الضمان</label>
+        <select id="batWarranty"><option>بدون ضمان</option><option>ضمان 6 شهور</option><option>ضمان 12 شهر</option></select></div>
+      <div class="u-flex-g6">
+        <button class="btn bg" id="batPayBtn" style="flex:1" onclick="setBatPay('cash')">💵 نقدي</button>
+        <button class="btn bgh" id="batCreditBtn" style="flex:1" onclick="setBatPay('credit')">📋 آجل</button>
+      </div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mBattery')">إلغاء</button><button class="btn bg" onclick="doBatterySale()">✅ تسجيل</button></div>
+  </div>
+</div>
+
+<!-- إضافة مورد -->
+<div class="ov" id="mAddSupplier">
+  <div class="modal">
+    <div class="mhd"><h3>✦ إضافة مورد جديد</h3><button class="mcl" onclick="cm('mAddSupplier')">✕</button></div>
+    <div class="mbd">
+      <div class="fg2">
+        <div class="fg"><label>اسم المورد *</label><input id="supNm"></div>
+        <div class="fg"><label>الهاتف</label><input id="supPh" type="tel" placeholder="01..."></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label>نوع النشاط</label><input id="supType" placeholder="قطع غيار، بطاريات..."></div>
+        <div class="fg"><label>العنوان</label><input id="supAddr" placeholder="المدينة، الشارع..."></div>
+      </div>
+      <div class="fg"><label>الرصيد (مستحق للمورد)</label><input id="supBal" type="number" value="0" min="0" class="u-red-bold"></div>
+      <div class="fg"><label>ملاحظات</label><textarea id="supNote" rows="2" placeholder="أي ملاحظات..."></textarea></div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mAddSupplier')">إلغاء</button><button class="btn bg" onclick="saveSupplier()">💾 حفظ</button></div>
+  </div>
+</div>
+
+<!-- تعديل مورد -->
+<div class="ov" id="mEditSupplier">
+  <div class="modal">
+    <div class="mhd"><h3>✦ تعديل بيانات المورد</h3><button class="mcl" onclick="cm('mEditSupplier')">✕</button></div>
+    <div class="mbd">
+      <input type="hidden" id="esId">
+      <div class="fg2">
+        <div class="fg"><label>اسم المورد</label><input id="esNm"></div>
+        <div class="fg"><label>الهاتف</label><input id="esPh" type="tel"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label>نوع النشاط</label><input id="esType"></div>
+        <div class="fg"><label>العنوان</label><input id="esAddr"></div>
+      </div>
+      <div class="fg"><label>الرصيد</label><input id="esBal" type="number" class="u-red-bold"></div>
+      <div class="fg"><label>ملاحظات</label><textarea id="esNote" rows="2"></textarea></div>
+      <div id="supLastUpdate" style="font-size:.67rem;color:var(--muted);margin-top:4px"></div>
+    </div>
+    <div class="mft">
+      <button class="btn bo bsm" onclick="archiveSupplier(+document.getElementById('esId').value)">🗄️ أرشفة</button>
+      <button class="btn bgh" onclick="cm('mEditSupplier')">إلغاء</button>
+      <button class="btn bg" onclick="updSupplier()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- حذف بكلمة مرور -->
+<div class="ov" id="mAdminDel">
+  <div class="modal" style="border-radius:14px;margin:16px;max-width:380px">
+    <div class="mhd"><h3>🔐 حذف بإذن المدير</h3><button class="mcl" onclick="cm('mAdminDel')">✕</button></div>
+    <div class="mbd">
+      <div style="background:var(--rdim);border:1px solid var(--rbdr);border-radius:var(--rs);padding:10px;margin-bottom:10px;font-size:.78rem;color:var(--red)">
+        ⚠️ هذا الإجراء لا يمكن التراجع عنه! الحذف نهائي.
+      </div>
+      <input type="hidden" id="adminDelId"><input type="hidden" id="adminDelType">
+      <div class="fg"><label>كلمة مرور المدير</label><input id="adminPwd" type="password" placeholder="أدخل كلمة المرور"></div>
+    </div>
+    <div class="mft"><button class="btn bgh" onclick="cm('mAdminDel')">إلغاء</button><button class="btn br" onclick="confirmAdminDel()">🗑️ حذف نهائي</button></div>
+  </div>
+</div>
+
+<!-- تنبيه الديون -->
+<div id="debtAlert" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:16px">
+  <div class="debt-alert">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="color:var(--red);font-size:.95rem">✦ تنبيه المديونية</h3>
+      <button class="mcl" onclick="document.getElementById('debtAlert').style.display='none'">✕</button>
+    </div>
+    <div id="debtAlertList"></div>
+    <button class="btn bo" style="width:100%;margin-top:10px" onclick="document.getElementById('debtAlert').style.display='none'">حسناً، سأتابعها</button>
+  </div>
+</div>
+
+
+  <!-- ══ Modular JS — load order matters ══ -->
+  <script src="storage.js"></script>
+  <script src="invoice.js"></script>
+  <script src="settings.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
