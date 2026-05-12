@@ -1,6 +1,6 @@
 {
-  "name": "أيمن الشرنوبى — نظام البيع الذهبي",
-  "short_name": "أيمن الشرنوبى",
+  "name": "POS Production",
+  "short_name": "POS",
   "description": "نظام نقاط البيع الاحترافي — لبرمجة ونسخ المفاتيح وبيع البطاريات وقطع التوكتوك",
   "start_url": "./index.html",
   "scope": "./",
