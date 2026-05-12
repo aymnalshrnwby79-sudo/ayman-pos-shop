@@ -570,3 +570,7 @@ input[placeholder*="بحث"]:focus {
 .u-thumb-img { width:54px; height:54px; border-radius:8px; background:var(--s2); border:1px solid var(--brd2); }
 .u-sel-130  { width:130px; background:var(--s2); border:1px solid var(--brd2); border-radius:var(--rs); }
 .u-muted-68 { font-size:.68rem; color:var(--muted); margin-top:4px; }
+
+.test-color{
+  color:red;
+}
